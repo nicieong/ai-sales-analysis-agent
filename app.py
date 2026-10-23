@@ -10,6 +10,8 @@ from sales_analysis import (
 
 from inventory_analysis import analyze_inventory
 
+from agent import ask_agent
+
 
 # Page configuration
 st.set_page_config(
@@ -22,6 +24,30 @@ st.set_page_config(
 # Dashboard title
 st.title("AI Sales & Inventory Analyst")
 st.caption("Sales Performance Dashboard")
+
+# AI Analyst
+st.divider()
+st.subheader("AI Analyst")
+
+with st.form("ai_analyst_form"):
+    question = st.text_input(
+        "Ask a question about sales or inventory",
+        placeholder="e.g. What are the total sales?"
+    )
+
+    submitted = st.form_submit_button("Ask AI")
+
+if submitted:
+    if not question.strip():
+        st.warning("Please enter a question.")
+    else:
+        with st.spinner("AI is analysing your question..."):
+            try:
+                answer = ask_agent(question)
+                st.markdown("**AI Answer**")
+                st.write(answer)
+            except Exception as error:
+                st.error(f"Unable to get an AI response: {error}")
 
 
 try:
