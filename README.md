@@ -1,192 +1,246 @@
-# AI-Powered Sales & Inventory Analyst
+# AI Sales & Inventory Analyst
 
-## Project Overview
+A local AI-powered sales and inventory analysis dashboard built with Python, Streamlit, and a tool-calling LLM. This proof of concept (POC) combines structured business-data analysis with natural-language questions to support sales performance monitoring and inventory risk assessment.
 
-An AI-powered Proof of Concept (POC) that combines sales analysis, basic inventory risk monitoring, and Large Language Model (LLM) tool calling to support data-driven business decisions.
+## 1. Project Overview
 
-The application uses Python and pandas for data analysis, Streamlit for the interactive dashboard, and an LLM agent to interpret user questions and invoke the appropriate analysis tools.
+Retail sales and inventory data can reveal important business signals, but manually reviewing figures across different reports takes time.
 
-### Objectives
+This project explores how an AI assistant can make structured sales and inventory analysis more accessible by combining a visual dashboard with natural-language interaction.
 
-- Analyse sales performance and product-level sales trends.
-- Monitor inventory levels and identify products requiring replenishment.
-- Enable natural-language questions through LLM tool calling.
-- Demonstrate practical integration of Python data analysis, AI orchestration, and an interactive dashboard.
+**Project goals**
+- Monitor sales performance over a selectable reporting period.
+- Identify top-performing products and inventory risks.
+- Allow users to ask business questions in natural language.
+- Use Python tools for structured calculations and data retrieval rather than relying on the LLM to invent business figures.
+- Validate the integration between the dashboard, LLM, Python tools, and serialized tool results.
 
-### Technology Stack
+**Project type:** Personal project / Proof of Concept (POC)  
+**Data:** Synthetic retail sales and inventory data  
+**Environment:** Local development on Windows
 
-- **Language:** Python
-- **Data Analysis:** pandas
-- **Dashboard:** Streamlit
-- **AI Integration:** LLM Tool Calling
-- **Development Environment:** PyCharm
+## 2. Features
 
-### Project Scope
+### Sales Performance Dashboard
+- Sales KPIs: total sales, total quantity, transaction count, and average daily sales.
+- Daily sales trend chart.
+- Top 5 products by sales, with a horizontal bar chart and supporting table.
+- Reporting periods: last 14 full days, last 30 full days, or a custom date range.
+- Date-range validation, data-coverage information, and handling of periods without available sales data.
+- Maximum reporting period of 365 calendar days.
 
-This project focuses on sales analytics and basic inventory risk monitoring. It is a Proof of Concept (POC), not a full Enterprise Resource Planning (ERP) system.
+### Inventory Risk Analysis
+- Inventory overview showing total products, products requiring reorder, and products with estimable stock coverage.
+- Inventory status based on current stock and reorder thresholds.
+- Estimated stock-cover days based on average daily sales.
+- Inventory risk details prioritised by reorder status and stock-cover days.
+- Sales and inventory comparison by product.
 
-Features such as supplier management, purchasing workflows, inventory costing, multi-warehouse management, and advanced forecasting are outside the current V1.0 scope.
+### AI Analyst
+- Natural-language question input through the Streamlit dashboard.
+- LLM tool calling to request structured analysis from Python functions.
+- Sales KPI and inventory analysis tools.
+- JSON serialization of tool results before returning them to the LLM.
+- System instructions designed to prioritise tool results, explain errors accurately, and improve numerical comparisons.
 
-## System Architecture
+Example questions:
+- `What are the total sales?`
+- `Which products require reordering, and why?`
+- `Which products have estimated stock cover below 1 day?`
+- `Which product has the lowest estimated stock cover days?`
 
-The application separates natural-language interaction, tool orchestration, and data analysis into distinct responsibilities.
+## 3. System Architecture
 
-### Architecture Components
+The project separates language understanding, business-data analysis, and presentation.
+
+```text
+User
+  |
+  v
+Streamlit Dashboard (app.py)
+  |
+  v
+AI Agent / Orchestration (agent.py)
+  |
+  v
+Local LLM via Ollama
+  |
+  | Tool call with arguments
+  v
+Python Analysis Functions
+  |
+  +-----------------------+
+  |                       |
+  v                       v
+Sales Analysis       Inventory Analysis
+(sales_analysis.py)  (inventory_analysis.py)
+  |                       |
+  +-----------+-----------+
+              |
+              v
+       Structured Results
+              |
+              v
+       JSON Serialization
+              |
+              v
+       LLM Final Response
+              |
+              v
+       Streamlit Dashboard
+```
+
+### Component responsibilities
 
 | Component | Responsibility |
 |---|---|
-| LLM | Interprets user questions and generates natural-language responses. |
-| Agent / Orchestration | Coordinates the interaction between the LLM and available analysis tools. |
-| Analysis Tools | Execute Python functions to calculate sales metrics and retrieve inventory-related insights. |
-| Data Processing | Uses pandas to process and analyse structured sales and inventory data. |
-| Streamlit Dashboard | Provides the user interface for viewing analysis results and interacting with the application. |
+| `app.py` | Displays the dashboard, charts, tables, reporting-period controls, and AI Analyst interface. |
+| `agent.py` | Manages the LLM conversation, tool-calling loop, tool execution, result serialization, and response generation. |
+| `sales_analysis.py` | Performs structured sales-data calculations and product-level analysis. |
+| `inventory_analysis.py` | Analyses inventory status, reorder requirements, average daily sales, and estimated stock coverage. |
+| `data/` | Contains the synthetic sales and inventory datasets. |
+| Ollama | Runs the local language model used by the AI Analyst. |
 
-### Typical Interaction Flow
+### Why use Python tools with an LLM?
 
-1. The user submits a business question through the application.
-2. The LLM interprets the question and determines whether an available tool is needed.
-3. The agent coordinates the tool-calling process.
-4. The selected Python analysis function processes the relevant data and returns its result.
-5. The LLM uses the tool result to formulate a response for the user.
+The LLM interprets the user's question and decides when to request a permitted tool. Python performs the underlying calculations using structured data. The LLM then turns the returned results into a readable explanation.
 
-The actual execution flow depends on the application's implemented tool-calling logic and available tools.
+This separation helps keep business calculations explicit and verifiable, although the LLM can still misinterpret or incorrectly summarise results.
 
-### Design Approach
+## 4. Technology Stack
 
-The project follows an incremental development approach. Individual analysis features are implemented and tested before being integrated into the wider application.
+- **Python 3.12.1** — application logic and data analysis.
+- **Pandas** — data loading, transformation, aggregation, and analysis.
+- **Streamlit 1.66.0** — interactive dashboard and AI question interface.
+- **Ollama** — local LLM runtime.
+- **Qwen3:4B** — language model used for the AI Analyst.
+- **Git** — local version control.
 
-This separation of responsibilities helps make the application easier to understand, test, debug, and extend.
-
-## Features
-
-### 1. Sales Performance Dashboard
-
-- Displays key sales performance indicators through KPI cards.
-- Summarises total sales, total quantity sold, total transactions, and average daily sales.
-- Supports different reporting periods for reviewing sales performance.
-
-### 2. Flexible Date-Range Analysis
-
-- **Last 14 Full Days:** Analyses the most recent 14 complete days.
-- **Last 30 Full Days:** Analyses the most recent 30 complete days.
-- **Custom Date Range:** Allows users to select a reporting period within the available dataset.
-- Validates date selections and handles invalid or unsupported reporting ranges.
-
-### 3. Inventory Risk Monitoring
-
-- Identifies products that require replenishment based on the implemented inventory rules.
-- Displays inventory risk details in a structured table.
-- Prioritises products marked as requiring reorder.
-- Supports configurable analysis periods for reviewing inventory-related sales data.
-
-### 4. Data Analysis and Validation
-
-- Uses Python and pandas to process structured sales and inventory data.
-- Applies data validation and date-range checks before performing analysis.
-- Supports testing of edge cases, including zero-sales products and date ranges with no overlapping data.
-
-### 5. AI Tool-Calling Integration
-
-- Integrates an LLM with Python-based analysis tools.
-- Supports a tool-calling workflow in which the model can request analysis and use returned results to formulate an answer.
-- Separates language-model interaction from the underlying data-analysis logic.
-
-The scope of AI-assisted analysis is limited to the tools and workflows implemented in the current version.
-
-## QA, Debugging and Problem Solving
-
-The project follows an iterative development and testing approach. Issues are investigated using actual execution results, followed by targeted fixes and verification.
-
-### Debugging Workflow
-
-1. **Identify the issue** — Reproduce the unexpected behaviour and identify the affected feature or component.
-2. **Inspect execution results** — Examine actual Python tool outputs and intermediate results instead of relying solely on the final LLM response.
-3. **Verify data serialization and parsing** — Check whether tool results can be correctly serialized into JSON and parsed by the receiving component, including handling pandas `Timestamp` values where applicable.
-4. **Cross-check analytical results** — Compare tool outputs against independently executed Python analysis to help identify discrepancies.
-5. **Apply targeted fixes** — Correct the underlying issue while keeping changes focused on the affected functionality.
-6. **Retest and document evidence** — Re-run the relevant test and record the observed result to confirm whether the fix resolves the issue.
-
-### Testing Principles
-
-- Validate actual execution behaviour rather than assuming that a successful model response guarantees correct analysis.
-- Check the consistency between Python analysis results and the information presented to the user.
-- Test relevant edge cases and data-format conversions.
-- Prefer small, incremental changes that can be verified before proceeding to the next feature.
-
-### Scope of Testing
-
-Testing is performed as part of the project's development and debugging workflow. This documentation describes practical development testing and troubleshooting; it does not claim formal enterprise QA certification or comprehensive automated test coverage.
-
-## Setup and Usage
+## 5. Setup and Usage
 
 ### Prerequisites
 
-- Windows
-- Python 3.12.1
-- A Python virtual environment
-- Streamlit
+- Python 3.12 or a compatible Python environment.
+- Git.
+- Ollama installed and running locally.
+- The `qwen3:4b` model available in Ollama.
 
-### Project Structure
+### Step 1: Create and activate a virtual environment
 
-The main application and analysis modules are organised as follows:
-
-```text
-myPythonProject/
-├── app.py
-├── generate_data.py
-├── validate_data.py
-├── sales_analysis.py
-├── inventory_analysis.py
-├── data/
-│   ├── sales.csv
-│   └── inventory.csv
-└── README.md
-```
-
-Additional application pages and supporting files may be added as development progresses.
-
-### Environment Setup
-
-Open a terminal in the project root directory:
+From the project root in PowerShell:
 
 ```powershell
-cd "cd path\to\myPythonProject"
-```
-
-Activate the existing virtual environment:
-
-```powershell
+python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 ```
 
-Verify the Python and Streamlit versions:
+### Step 2: Install the required Python packages
+
+If the project does not yet include a dependency file, install the packages used by the application:
 
 ```powershell
-python --version
-python -m streamlit --version
+python -m pip install streamlit pandas ollama
 ```
 
-If Streamlit is not installed in the active environment, install it using:
+### Step 3: Download the local model
 
 ```powershell
-python -m pip install streamlit
+ollama pull qwen3:4b
 ```
 
-### Run the Application
+Ensure Ollama is running before using the AI Analyst.
 
-Start the Streamlit application from the project root:
+### Step 4: Launch the dashboard
+
+From the project root:
 
 ```powershell
-python -m streamlit run app.py
+.\.venv\Scripts\python.exe -m streamlit run app.py
 ```
 
-Streamlit will provide a local URL in the terminal. Open that URL in a web browser to access the application.
+Streamlit will provide a local URL in the terminal. Open that URL in a browser to access the dashboard.
 
-### Development Workflow
+### Step 5: Try the AI Analyst
 
-The project is developed incrementally. Individual features are implemented and tested before further integration, with debugging and validation performed throughout development.
+Enter a question in the AI Analyst section and select **Ask AI**. The application sends the question to the agent, which may invoke Python analysis tools before generating its response.
 
+## 6. QA, Debugging, and Problem-Solving
 
+Testing was performed incrementally as features were developed and integrated. The process focused on observing actual outputs, checking data consistency, reproducing issues, and validating targeted changes.
 
+### Tool execution and data serialization
 
+During AI integration, the tool-calling flow was inspected using actual Python console output.
 
+Checks included:
+- Confirming that the LLM requested the expected tool, such as `analyze_inventory`.
+- Inspecting the actual Python result returned by the analysis function.
+- Comparing the Python result with the JSON-serialised tool result.
+- Verifying that pandas `Timestamp` values were converted into JSON-compatible strings using the serialization fallback.
+- Checking that the final AI response reflected the returned business data.
+
+### Numerical reasoning issue and targeted improvement
+
+An initial inventory question produced an inaccurate summary: the AI correctly identified products requiring reorder, but incorrectly described all of them as having less than one day of estimated stock coverage.
+
+The underlying Python results showed:
+
+| Product | Estimated stock cover | Correct classification |
+|---|---:|---|
+| Laundry Detergent | 0.51 days | Below 1 day |
+| Potato Chips | 0.86 days | Below 1 day |
+| Shampoo | 1.02 days | At least 1 day |
+| Green Tea | 1.17 days | At least 1 day |
+
+The issue was investigated by reviewing the tool output rather than assuming the Python calculations were incorrect.
+
+A targeted system-prompt change was then introduced to instruct the LLM to use exact tool-returned values and avoid unsupported numerical comparisons.
+
+Follow-up checks used both sides of the threshold:
+
+- Products with estimated stock cover below one day.
+- Products requiring reorder with estimated stock cover of at least one day.
+- The product with the lowest estimated stock cover.
+
+The follow-up answers matched the observed tool results in these cases. This provided evidence that the targeted change improved the tested responses, but did not establish that all possible LLM answers would be accurate.
+
+### Testing approach
+
+The development process used practical, incremental checks:
+
+1. Identify an unexpected result.
+2. Inspect actual Python output and execution logs.
+3. Verify serialization and the data passed between components.
+4. Compare the AI answer with the underlying analysis results.
+5. Apply a focused change rather than broadly rewriting the application.
+6. Repeat the relevant test and record the observed result.
+
+These are manual development and debugging checks for a POC; they should not be interpreted as a formal enterprise QA process or a comprehensive automated test suite.
+
+## 7. Limitations
+
+- The application uses synthetic data and has not been validated against a live retail POS or inventory system.
+- The LLM runs locally and response latency depends on the available hardware and model performance.
+- LLM-generated explanations can still contain inaccuracies, especially for broad or ambiguous questions.
+- Estimated stock-cover days are projections based on average daily sales, not guaranteed stockout times.
+- Promotional effects are not currently adjusted in the average daily sales baseline.
+- The dashboard limits the requested sales reporting period to 365 calendar days.
+- Automated evaluation of LLM responses and comprehensive regression testing have not yet been established.
+
+## 8. Future Improvements
+
+Potential next steps include:
+
+- Add a dependency file and improve fresh-environment setup.
+- Organise tests into a dedicated test directory and expand repeatable automated checks.
+- Add more regression tests for numerical thresholds, missing data, and ambiguous questions.
+- Improve structured validation of LLM tool arguments and returned results.
+- Explore more robust answer validation for numerical claims.
+- Evaluate performance and response latency across different local models.
+- Integrate with a real data source after validating data quality, access controls, and business requirements.
+
+## 9. Project Status
+
+This project is an evolving personal POC demonstrating practical experience with Python data analysis, Streamlit dashboard development, local LLM integration, tool calling, Git version control, and iterative debugging.
+
+The emphasis is on building and validating one feature at a time, keeping business calculations in explicit Python functions, and improving the reliability of AI-generated explanations through observed test results.
