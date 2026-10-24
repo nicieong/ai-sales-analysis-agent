@@ -249,6 +249,26 @@ The independent calculation used `sales_qty × pos_price` and filtered records t
 
 This provides evidence that the sales total matched the independent calculation for this tested period. It does not establish that every KPI, date range, or dataset has been independently verified.
 
+### Automated Tests and Manual Integration Test
+
+Test-related files are organized under the `tests/` directory.
+
+- `test_agent_error.py` — tests agent handling of invalid tool arguments.
+- `test_agent_general_question.py` — tests general questions that do not require tool calls.
+- `test_agent_unknown_tool.py` — tests handling of unsupported tools.
+- `test_inventory_zero_sales.py` — tests inventory analysis when a product has no sales within the analysis window.
+- `manual_agent_integration.py` — manually runs the agent against the local LLM to check inventory analysis and the use of actual tool results.
+
+Run the automated tests from the project root using:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest .\tests\ -v
+```
+
+The four automated tests passed after the test files were moved into `tests/` and the inventory test path was updated.
+
+The manual LLM integration script is kept separate from automated test discovery because it invokes the local LLM directly.
+
 ### Testing Approach
 
 The development process used practical, incremental checks:
