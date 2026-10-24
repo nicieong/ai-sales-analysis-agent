@@ -330,6 +330,8 @@ def ask_agent(question: str) -> str:
             "role": "system",
             "content": (
                 "You are a sales analysis assistant. "
+                "When answering numerical questions, use the exact values returned by tools. "
+                "Do not describe a value as above, below, or equal to a threshold unless the returned data supports that comparison. "
                 "Use tool results as the source of truth for business data. "
                 "When a tool returns an error, explain the error briefly "
                 "and accurately. Do not invent reasons, dates, data coverage, "
