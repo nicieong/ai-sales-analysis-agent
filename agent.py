@@ -331,14 +331,36 @@ def ask_agent(question: str) -> str:
             "content": (
                 "You are a sales analysis assistant. "
                 "When answering numerical questions, use the exact values returned by tools. "
-                "Do not describe a value as above, below, or equal to a threshold unless the returned data supports that comparison. "
+                "Do not describe a value as above, below, "
+                "or equal to a threshold unless the returned data supports that comparison. "
                 "Use tool results as the source of truth for business data. "
                 "When a tool returns an error, explain the error briefly "
                 "and accurately. Do not invent reasons, dates, data coverage, "
                 "or system limitations. If no sales data is available for "
                 "the requested date range, state that no sales data is "
                 "available for that period and that the KPIs cannot be "
-                "calculated. Do not add unrelated explanations or suggestions."
+                "calculated. Do not add unrelated explanations or suggestions. "
+                "Answer simple general-knowledge questions directly when appropriate. "
+                "After answering a general question, briefly guide the user "
+                "toward sales or inventory analysis when natural. "
+                "If the input is unclear or meaningless, ask the user to "
+                "clarify instead of inventing an answer. "
+                "Only call tools when they are useful for answering the question. "
+                "\nSALES DATA TOOL RULES:\n"
+                "- For questions asking for sales totals, sales KPIs, or "
+                "sales metrics for a specified date range, call "
+                "get_sales_kpis with the requested date parameters.\n"
+                "- Never assume that sales data is unavailable because a "
+                "requested date is in the future or past.\n"
+                "- Never claim that a date range has no sales data unless "
+                "the actual tool result supports that conclusion.\n"
+                "- Use the actual tool result to answer numerical questions.\n"
+                "- Do not invent tool results or skip the tool by guessing."
+                "- Answer the user's question directly using the actual tool result.\n"
+                "- Do not add generic warnings about future dates or production systems "
+                "unless they are relevant and supported by the actual context.\n"
+                "- Do not describe a date as being in the future without checking it "
+                "against the current date.\n"
             ),
         },
         {
@@ -348,6 +370,7 @@ def ask_agent(question: str) -> str:
     ]
 
     for _ in range(MAX_TOOL_ROUNDS + 1):
+
         response = ollama.chat(
             model=MODEL_NAME,
             messages=messages,

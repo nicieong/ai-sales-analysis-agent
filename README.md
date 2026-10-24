@@ -168,18 +168,18 @@ Enter a question in the AI Analyst section and select **Ask AI**. The applicatio
 
 Testing was performed incrementally as features were developed and integrated. The process focused on observing actual outputs, checking data consistency, reproducing issues, and validating targeted changes.
 
-### Tool execution and data serialization
+### Tool Execution and Data Serialization
 
 During AI integration, the tool-calling flow was inspected using actual Python console output.
 
 Checks included:
-- Confirming that the LLM requested the expected tool, such as `analyze_inventory`.
+- Confirming that the LLM requested the expected tool, such as `analyze_inventory` or `get_sales_kpis`.
 - Inspecting the actual Python result returned by the analysis function.
 - Comparing the Python result with the JSON-serialised tool result.
 - Verifying that pandas `Timestamp` values were converted into JSON-compatible strings using the serialization fallback.
 - Checking that the final AI response reflected the returned business data.
 
-### Numerical reasoning issue and targeted improvement
+### Numerical Reasoning Issue and Targeted Improvement
 
 An initial inventory question produced an inaccurate summary: the AI correctly identified products requiring reorder, but incorrectly described all of them as having less than one day of estimated stock coverage.
 
@@ -194,17 +194,62 @@ The underlying Python results showed:
 
 The issue was investigated by reviewing the tool output rather than assuming the Python calculations were incorrect.
 
-A targeted system-prompt change was then introduced to instruct the LLM to use exact tool-returned values and avoid unsupported numerical comparisons.
+A targeted system-prompt change was introduced to instruct the LLM to use exact tool-returned values and avoid unsupported numerical comparisons.
 
-Follow-up checks used both sides of the threshold:
-
+Follow-up checks covered:
 - Products with estimated stock cover below one day.
 - Products requiring reorder with estimated stock cover of at least one day.
 - The product with the lowest estimated stock cover.
 
 The follow-up answers matched the observed tool results in these cases. This provided evidence that the targeted change improved the tested responses, but did not establish that all possible LLM answers would be accurate.
 
-### Testing approach
+### Sales Analysis and Tool-Calling Validation
+
+Sales-related questions were tested to check whether the agent selected the appropriate tool, passed date parameters correctly, and based its answers on actual analysis results.
+
+Checks included:
+
+- **General knowledge:** Confirmed that straightforward questions, such as asking how many days October has, could be answered without unnecessary tool calls.
+- **Full-range sales total:** The agent returned total sales of 77,861.76. An independent calculation from the raw CSV, using `sales_qty × pos_price`, produced the same total.
+- **Date-range sales total:** Tested sales queries for specified date ranges and checked that the tool received the requested start and end dates.
+- **Quantity sold:** Confirmed that the agent returned the quantity reported by the sales analysis tool for a tested date range.
+- **Invalid date range:** Checked that a request with a start date later than the end date prompted clarification rather than producing a sales figure.
+- **Date-format handling:** Tested dates written with slashes, such as `2026/07/21`, and verified that the agent passed the corresponding dates to the tool in ISO format.
+- **Unavailable sales data:** Confirmed that when the tool reported no sales data for a requested period, the agent communicated the result instead of inventing numerical values.
+
+### Date-Related Reasoning and Prompt Refinement
+
+During testing, the agent initially produced an unsupported explanation about future dates even when the requested dates were within the available historical sales data.
+
+The issue was identified by comparing the final AI response with the actual tool result and the dataset's date range.
+
+A targeted system-prompt change instructed the agent to:
+- Answer directly using actual tool results.
+- Avoid generic warnings about future dates or production systems unless relevant and supported.
+- Check the current date before describing a requested period as being in the future.
+- Avoid inventing data availability, dates, or system limitations.
+
+The same slash-formatted date query was then repeated. The agent called the expected tool with the correct date parameters, returned the correct sales total, and no longer added the unsupported future-date warning.
+
+This demonstrated an improvement in the specific tested scenario, not a guarantee against all date-related reasoning errors.
+
+### Independent Cross-Verification
+
+To check the consistency of the sales calculation, one date-range result was independently recalculated from the raw CSV.
+
+For 2026-07-24 to 2026-07-26:
+
+| Check | Total sales |
+|---|---:|
+| Sales analysis tool result | 1,957.26 |
+| Independent raw CSV calculation | 1,957.26 |
+| Difference | 0.00 |
+
+The independent calculation used `sales_qty × pos_price` and filtered records to the requested date range. Both calculations returned the same total.
+
+This provides evidence that the sales total matched the independent calculation for this tested period. It does not establish that every KPI, date range, or dataset has been independently verified.
+
+### Testing Approach
 
 The development process used practical, incremental checks:
 
