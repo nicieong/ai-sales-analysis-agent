@@ -321,6 +321,10 @@ TOOLS = [
 
 
 def ask_agent(question: str) -> str:
+    print(
+        f"DEBUG: ask_agent started. Question: {question!r}",
+        flush=True,
+    )
     """Ask the LLM a question and execute permitted tool calls."""
     if not isinstance(question, str) or not question.strip():
         raise ValueError("Question cannot be empty")
@@ -371,19 +375,24 @@ def ask_agent(question: str) -> str:
 
     for _ in range(MAX_TOOL_ROUNDS + 1):
 
+        print("DEBUG: Calling Ollama...", flush=True)
+
         response = ollama.chat(
             model=MODEL_NAME,
             messages=messages,
             tools=TOOLS,
         )
 
+        print("DEBUG: Ollama response received.", flush=True)
+
         message = response["message"]
+
         messages.append(message)
 
-        tool_calls = message.get("tool_calls", [])
+        tool_calls = message.get("tool_calls") or []
 
         if not tool_calls:
-            return message.get("content", "")
+            return message.get("content") or ""
 
         for tool_call in tool_calls:
             function_name = tool_call["function"]["name"]

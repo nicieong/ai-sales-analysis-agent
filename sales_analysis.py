@@ -99,24 +99,78 @@ def get_daily_sales_summary(df):
 
 def get_daily_sales_trend(df, start_date=None, end_date=None):
     """
-    Return daily sales totals for the selected date range.
+    Return daily sales totals and a seven-calendar-day moving average.
     """
+    # Validate the requested period and get the available sales records.
     filtered_df = filter_sales_by_date(
         df,
         start_date=start_date,
         end_date=end_date,
     )
 
+    # Preserve the full dataset's date range for moving-average warm-up.
+    all_sales = df.copy()
+    all_sales["sales_date"] = pd.to_datetime(
+        all_sales["sales_date"]
+    ).dt.normalize()
+
+    available_start = all_sales["sales_date"].min()
+    available_end = all_sales["sales_date"].max()
+
+    requested_start = (
+        available_start
+        if start_date is None
+        else pd.to_datetime(start_date).normalize()
+    )
+    requested_end = (
+        available_end
+        if end_date is None
+        else pd.to_datetime(end_date).normalize()
+    )
+
+    # Include up to six preceding calendar days for the first MA value.
+    calculation_start = max(
+        available_start,
+        requested_start - pd.Timedelta(days=6),
+    )
+
+    calculation_df = all_sales.loc[
+        (all_sales["sales_date"] >= calculation_start)
+        & (all_sales["sales_date"] <= requested_end)
+    ]
+
     daily_sales = (
-        filtered_df.groupby("sales_date")
+        calculation_df.groupby("sales_date")
         .agg(
             sales_amount=("sales_amount", "sum"),
             sales_qty=("sales_qty", "sum"),
         )
-        .reset_index()
+        .sort_index()
     )
 
-    return daily_sales.sort_values("sales_date").reset_index(drop=True)
+    # Ensure every calendar date exists before calculating the rolling mean.
+    full_dates = pd.date_range(
+        start=calculation_start,
+        end=requested_end,
+        freq="D",
+    )
+
+    daily_sales = daily_sales.reindex(full_dates, fill_value=0)
+    daily_sales.index.name = "sales_date"
+
+    daily_sales["sales_7day_ma"] = (
+        daily_sales["sales_amount"]
+        .rolling(window=7, min_periods=7)
+        .mean()
+    )
+
+    # Display only the requested reporting period.
+    daily_sales = daily_sales.loc[
+        (daily_sales.index >= requested_start)
+        & (daily_sales.index <= requested_end)
+    ]
+
+    return daily_sales.reset_index()
 
 
 def get_sales_by_product(df, start_date=None, end_date=None):
@@ -151,6 +205,88 @@ def get_sales_by_product(df, start_date=None, end_date=None):
             "sales_contribution_pct": 2,
         }
     )
+
+
+def get_product_daily_sales_trend(
+    df,
+    product_id,
+    start_date=None,
+    end_date=None,
+):
+    """
+    Return daily sales and a seven-calendar-day moving average
+    for one product within the selected date range.
+    """
+    # Validate the selected date range.
+    filter_sales_by_date(df, start_date, end_date)
+
+    all_sales = df.copy()
+    all_sales["sales_date"] = pd.to_datetime(
+        all_sales["sales_date"]
+    ).dt.normalize()
+
+    # Find the available and requested date boundaries.
+    available_start = all_sales["sales_date"].min()
+    available_end = all_sales["sales_date"].max()
+
+    requested_start = (
+        available_start
+        if start_date is None
+        else pd.to_datetime(start_date).normalize()
+    )
+    requested_end = (
+        available_end
+        if end_date is None
+        else pd.to_datetime(end_date).normalize()
+    )
+
+    # Include six preceding calendar days for the moving average.
+    calculation_start = max(
+        available_start,
+        requested_start - pd.Timedelta(days=6),
+    )
+
+    product_df = all_sales.loc[
+        (all_sales["product_id"] == product_id)
+        & (all_sales["sales_date"] >= calculation_start)
+        & (all_sales["sales_date"] <= requested_end)
+    ]
+
+    daily_sales = (
+        product_df.groupby("sales_date")
+        .agg(
+            sales_amount=("sales_amount", "sum"),
+            sales_qty=("sales_qty", "sum"),
+        )
+        .sort_index()
+    )
+
+    # Fill missing calendar dates with zero sales for this product.
+    full_dates = pd.date_range(
+        start=calculation_start,
+        end=requested_end,
+        freq="D",
+    )
+
+    daily_sales = daily_sales.reindex(
+        full_dates,
+        fill_value=0,
+    )
+    daily_sales.index.name = "sales_date"
+
+    daily_sales["sales_7day_ma"] = (
+        daily_sales["sales_amount"]
+        .rolling(window=7, min_periods=7)
+        .mean()
+    )
+
+    # Return only the selected reporting period.
+    daily_sales = daily_sales.loc[
+        (daily_sales.index >= requested_start)
+        & (daily_sales.index <= requested_end)
+    ]
+
+    return daily_sales.reset_index()
 
 
 def get_month_period_analysis(

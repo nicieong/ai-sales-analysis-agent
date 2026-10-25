@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import altair as alt
 from datetime import timedelta
 
 from sales_analysis import (
@@ -18,6 +19,7 @@ st.set_page_config(
 
 st.title("Supplementary Sales Analysis")
 st.caption("Additional analysis of sales patterns across dates and weekdays.")
+st.caption("Current currency: CAD")
 
 st.header("1. Month Period Analysis")
 
@@ -157,7 +159,7 @@ try:
             column_config={
                 "Days": st.column_config.NumberColumn(format="%d"),
                 "Average Daily Sales": st.column_config.NumberColumn(
-                    format="$%.2f"
+                    format="$%,.2f"
                 ),
                 "Average Daily Quantity": st.column_config.NumberColumn(
                     format="%.2f"
@@ -168,13 +170,35 @@ try:
             },
         )
 
-        # Chart
-        chart_df = display_df.set_index("Period")[
-            ["Average Daily Sales"]
-        ]
-
         st.subheader("Average Daily Sales by Month Period")
-        st.bar_chart(chart_df)
+
+        # Chart
+        chart_df = display_df[["Period", "Average Daily Sales"]].copy()
+
+        chart = alt.Chart(chart_df).mark_bar().encode(
+            x=alt.X(
+                "Period:N",
+                title="Month Period",
+                sort=None,
+            ),
+            y=alt.Y(
+                "Average Daily Sales:Q",
+                title="Average Daily Sales (CAD)",
+                axis=alt.Axis(format="$,.2f"),
+            ),
+            tooltip=[
+                alt.Tooltip("Period:N", title="Period"),
+                alt.Tooltip(
+                    "Average Daily Sales:Q",
+                    title="Average Daily Sales",
+                    format="$,.2f",
+                ),
+            ],
+        ).properties(
+            height=400,
+        )
+
+        st.altair_chart(chart, use_container_width=True)
 
 except Exception as e:
     st.error(f"Unable to load Month Period Analysis: {e}")
@@ -230,22 +254,43 @@ try:
             hide_index=True,
             column_config={
                 "Days": st.column_config.NumberColumn(format="%d"),
-                "Total Sales": st.column_config.NumberColumn(format="$%.2f"),
-                "Average Daily Sales": st.column_config.NumberColumn(format="$%.2f"),
+                "Total Sales": st.column_config.NumberColumn(format="$%,.2f"),
+                "Average Daily Sales": st.column_config.NumberColumn(format="$%,.2f"),
                 "Average Daily Quantity": st.column_config.NumberColumn(format="%.2f"),
                 "Total Transactions": st.column_config.NumberColumn(format="%d"),
                 "Average Daily Transactions": st.column_config.NumberColumn(format="%.2f"),
-                "Average Transaction Value": st.column_config.NumberColumn(format="$%.2f"),
+                "Average Transaction Value": st.column_config.NumberColumn(format="$%,.2f"),
             },
         )
 
         st.subheader("Average Daily Sales: Weekday vs Weekend")
 
-        chart_df = display_df.set_index("Day Type")[
-            ["Average Daily Sales"]
-        ]
+        chart_df = display_df[["Day Type", "Average Daily Sales"]].copy()
 
-        st.bar_chart(chart_df)
+        chart = alt.Chart(chart_df).mark_bar().encode(
+            x=alt.X(
+                "Day Type:N",
+                title="Day Type",
+                sort=None,
+            ),
+            y=alt.Y(
+                "Average Daily Sales:Q",
+                title="Average Daily Sales (CAD)",
+                axis=alt.Axis(format="$,.2f"),
+            ),
+            tooltip=[
+                alt.Tooltip("Day Type:N", title="Day Type"),
+                alt.Tooltip(
+                    "Average Daily Sales:Q",
+                    title="Average Daily Sales",
+                    format="$,.2f",
+                ),
+            ],
+        ).properties(
+            height=400,
+        )
+
+        st.altair_chart(chart, use_container_width=True)
 
 except Exception as e:
     st.error(f"Unable to load Weekday vs Weekend Analysis: {e}")
@@ -301,22 +346,43 @@ try:
             hide_index=True,
             column_config={
                 "Days": st.column_config.NumberColumn(format="%d"),
-                "Average Daily Sales": st.column_config.NumberColumn(format="$%.2f"),
-                "Total Sales": st.column_config.NumberColumn(format="$%.2f"),
+                "Average Daily Sales": st.column_config.NumberColumn(format="$%,.2f"),
+                "Total Sales": st.column_config.NumberColumn(format="$%,.2f"),
                 "Total Transactions": st.column_config.NumberColumn(format="%d"),
                 "Average Daily Transactions": st.column_config.NumberColumn(format="%.2f"),
-                "Average Transaction Value": st.column_config.NumberColumn(format="$%.2f"),
+                "Average Transaction Value": st.column_config.NumberColumn(format="$%,.2f"),
                 "Vs Overall Average (%)": st.column_config.NumberColumn(format="%.2f%%"),
             },
         )
 
         st.subheader("Average Daily Sales by Weekday")
 
-        chart_df = display_df.set_index("Weekday")[
-            ["Average Daily Sales"]
-        ]
+        chart_df = display_df[["Weekday", "Average Daily Sales"]].copy()
 
-        st.bar_chart(chart_df)
+        chart = alt.Chart(chart_df).mark_bar().encode(
+            x=alt.X(
+                "Weekday:N",
+                title="Weekday",
+                sort=None,
+            ),
+            y=alt.Y(
+                "Average Daily Sales:Q",
+                title="Average Daily Sales (CAD)",
+                axis=alt.Axis(format="$,.2f"),
+            ),
+            tooltip=[
+                alt.Tooltip("Weekday:N", title="Weekday"),
+                alt.Tooltip(
+                    "Average Daily Sales:Q",
+                    title="Average Daily Sales",
+                    format="$,.2f",
+                ),
+            ],
+        ).properties(
+            height=400,
+        )
+
+        st.altair_chart(chart, use_container_width=True)
 
 except Exception as e:
     st.error(f"Unable to load Weekday Sales Analysis: {e}")
